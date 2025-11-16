@@ -64,11 +64,11 @@ def getMissingCoverage(report:str) -> dict[str,list[str]]:
     with open(report, 'r') as file:
         tree = ET.parse(file)
         root = tree.getroot()
-        for codeClass in root.find(".//class"):
+        for codeClass in root.findall(".//class"):
             if codeClass is not None:
                 className = codeClass.get('name')
+                missedMethods = []
                 for method in codeClass.findall('method'):
-                    missedMethods = []
                     methodName = method.get('name')
                     counter = method.find(".//counter[@type='INSTRUCTION']")
                     counterNum = int(counter.get('missed'))
