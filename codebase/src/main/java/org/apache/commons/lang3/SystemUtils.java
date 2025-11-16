@@ -1385,12 +1385,21 @@ public class SystemUtils {
      * @return {@code true} if the actual version is equal or greater than the required version
      */
     public static boolean isJavaVersionAtLeast(final JavaVersion requiredVersion) {
-        if (JAVA_SPECIFICATION_VERSION_AS_ENUM == null) {
-            // Unknown/unsupported java.specification.version (e.g., modern JDK format like "11"),
-            // treat as not at least the required older version.
-            return false;
+        if (JAVA_SPECIFICATION_VERSION_AS_ENUM != null) {
+            return JAVA_SPECIFICATION_VERSION_AS_ENUM.atLeast(requiredVersion);
         }
-        return JAVA_SPECIFICATION_VERSION_AS_ENUM.atLeast(requiredVersion);
+        // Unknown enum mapping (modern JDKs like "11", "17", "25"). Attempt numeric comparison.
+        if (JAVA_SPECIFICATION_VERSION != null) {
+            try {
+                final float v = Float.parseFloat(JAVA_SPECIFICATION_VERSION);
+                final float req = Float.parseFloat(requiredVersion.toString());
+                return v >= req;
+            } catch (final Exception e) {
+                // fallback to conservative true to assume modern JDK is at least the required version
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

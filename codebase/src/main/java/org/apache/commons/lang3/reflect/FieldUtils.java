@@ -217,6 +217,10 @@ public class FieldUtils {
         while (currentClass != null) {
             final Field[] declaredFields = currentClass.getDeclaredFields();
             for (Field field : declaredFields) {
+                // Skip synthetic compiler-generated fields (e.g., this$0, $VALUES)
+                if (field.isSynthetic()) {
+                    continue;
+                }
                 allFields.add(field);
             }
             currentClass = currentClass.getSuperclass();
