@@ -1385,6 +1385,11 @@ public class SystemUtils {
      * @return {@code true} if the actual version is equal or greater than the required version
      */
     public static boolean isJavaVersionAtLeast(final JavaVersion requiredVersion) {
+        if (JAVA_SPECIFICATION_VERSION_AS_ENUM == null) {
+            // Unknown/unsupported java.specification.version (e.g., modern JDK format like "11"),
+            // treat as not at least the required older version.
+            return false;
+        }
         return JAVA_SPECIFICATION_VERSION_AS_ENUM.atLeast(requiredVersion);
     }
 
