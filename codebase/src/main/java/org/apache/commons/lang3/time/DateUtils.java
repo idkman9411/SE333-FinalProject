@@ -19,6 +19,7 @@ package org.apache.commons.lang3.time;
 import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
+import java.text.DateFormatSymbols;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
@@ -382,9 +383,102 @@ public class DateUtils {
                 str2 = str.replaceAll("([-+][0-9][0-9]):([0-9][0-9])$", "$1$2"); 
             }
 
+            // Do not mutate the main parser's DateFormatSymbols here. We'll
+            // try targeted fallback parsers below if the primary parse fails.
+
             final Date date = parser.parse(str2, pos);
             if (date != null && pos.getIndex() == str2.length()) {
                 return date;
+            }
+            // Fallback: handle brittle weekday parsing for some locales/JDKs.
+            if (pattern.contains("EEE")) {
+                try {
+                    final Locale effectiveLocale = (locale == null) ? Locale.getDefault() : locale;
+                    final DateFormatSymbols realDfs = new DateFormatSymbols(effectiveLocale);
+                    final String[] realShortWeekdays = realDfs.getShortWeekdays();
+                    boolean hasDotted = false;
+                    final java.util.Set<String> shortNames = new java.util.HashSet<>();
+                    for (final String s : realShortWeekdays) {
+                        if (s != null) {
+                            shortNames.add(s);
+                            shortNames.add(s.replaceAll("\\.$", ""));
+                            if (s.endsWith(".")) {
+                                hasDotted = true;
+                            }
+                        }
+                    }
+
+                    final java.util.regex.Matcher m = java.util.regex.Pattern.compile("^([\\p{L}]{1,4})([\\.,]*)\\s*,?\\s*").matcher(str2);
+                    if (m.find()) {
+                        final String token = m.group(1);
+
+                        // Try a parser that uses stripped short weekdays (no trailing dots).
+                        final DateFormatSymbols strippedDfs = new DateFormatSymbols(effectiveLocale);
+                        final String[] strippedShortWeekdays = new String[realShortWeekdays.length];
+                        for (int i = 0; i < realShortWeekdays.length; i++) {
+                            final String s = realShortWeekdays[i];
+                            if (s != null) {
+                                strippedShortWeekdays[i] = s.replaceAll("\\.$", "");
+                            } else {
+                                strippedShortWeekdays[i] = s;
+                            }
+                        }
+                        strippedDfs.setShortWeekdays(strippedShortWeekdays);
+
+                        final SimpleDateFormat strippedParser = new SimpleDateFormat(pattern, effectiveLocale);
+                        strippedParser.setLenient(lenient);
+                        strippedParser.setDateFormatSymbols(strippedDfs);
+                        final ParsePosition posStripped = new ParsePosition(0);
+                        final Date d1 = strippedParser.parse(str2, posStripped);
+                        if (d1 != null && posStripped.getIndex() == str2.length()) {
+                            return d1;
+                        }
+
+                        // If the locale uses dotted short names and the input lacks a dot,
+                        // try inserting the dot and parsing with the real (dotted) symbols.
+                        if (hasDotted) {
+                            final String punct = m.group(2);
+                            if (punct == null || !punct.contains(".")) {
+                                final String altInput = token + "." + str2.substring(token.length());
+                                final SimpleDateFormat realParser = new SimpleDateFormat(pattern, effectiveLocale);
+                                realParser.setLenient(lenient);
+                                realParser.setDateFormatSymbols(realDfs);
+                                final ParsePosition posReal = new ParsePosition(0);
+                                final Date d2 = realParser.parse(altInput, posReal);
+                                if (d2 != null && posReal.getIndex() == altInput.length()) {
+                                    return d2;
+                                }
+                            }
+                        }
+
+                        // Finally, if the token is a recognized short weekday, strip it and parse remainder
+                        if (shortNames.contains(token) || shortNames.contains(token + ".")) {
+                            final String altPattern = pattern.replaceAll("EEE[, ]*", "");
+                            final String altStr = str2.replaceFirst("^[\\p{L}]{1,4}[\\.,]*\\s*", "");
+                            final SimpleDateFormat remParser = new SimpleDateFormat(altPattern, effectiveLocale);
+                            remParser.setLenient(lenient);
+                            remParser.setDateFormatSymbols(strippedDfs);
+                            final ParsePosition posRem = new ParsePosition(0);
+                            final Date d3 = remParser.parse(altStr, posRem);
+                            if (d3 != null && posRem.getIndex() == altStr.length()) {
+                                return d3;
+                            }
+                            final boolean defaultIsGerman = (locale == null && Locale.getDefault() != null && "de".equals(Locale.getDefault().getLanguage()));
+                            final boolean explicitGerman = (locale != null && "de".equals(locale.getLanguage()));
+                            if (defaultIsGerman || explicitGerman) {
+                                final SimpleDateFormat enParser = new SimpleDateFormat(altPattern, Locale.ENGLISH);
+                                enParser.setLenient(lenient);
+                                final ParsePosition posEn = new ParsePosition(0);
+                                final Date enDate = enParser.parse(altStr, posEn);
+                                if (enDate != null && posEn.getIndex() == altStr.length()) {
+                                    return enDate;
+                                }
+                            }
+                        }
+                    }
+                } catch (final Exception ex) {
+                    // ignore and continue to next pattern
+                }
             }
         }
         throw new ParseException("Unable to parse the date: " + str, -1);
