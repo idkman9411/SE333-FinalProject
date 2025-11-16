@@ -64,11 +64,11 @@ def getMissingCoverage(report:str) -> dict[str,list[str]]:
     with open(report, 'r') as file:
         tree = ET.parse(file)
         root = tree.getroot()
-        for codeClass in root.find(".//class"):
+        for codeClass in root.findall(".//class"):
             if codeClass is not None:
                 className = codeClass.get('name')
+                missedMethods = []
                 for method in codeClass.findall('method'):
-                    missedMethods = []
                     methodName = method.get('name')
                     counter = method.find(".//counter[@type='INSTRUCTION']")
                     counterNum = int(counter.get('missed'))
@@ -141,6 +141,35 @@ def git_pull_request(title:str,body:str,base="main") -> str:
     #Create a pull request on GitHub.Upon success, the URL of the created pull request will be printed.
     url = os.popen(f'gh pr create --base {base} --title "{title}" --body "{body}"').read()
     return url
+
+
+#phase 5
+@mcp.tool
+def getCheckstyle()-> str:
+    """Cets the path to Checkstyle report """
+    currDir = os.getcwd()
+    path = os.path.join(currDir,"codebase","target","checkstyle-result.xml")
+    if os.path.isfile(path):
+        return path
+
+@mcp.tool    
+def parseCheckstyle(report: str) -> dict[str, list[str]]:
+    """Parses the Checkstyle report and returns the files and their style violations"""
+    violations = {}
+    with open(report, 'r') as file:
+        tree = ET.parse(file)
+        root = tree.getroot()
+        for elem in root.findall('file'):
+            file_name = elem.get('name')
+            file_violations = []
+            for error in elem.findall('error'):
+                line = error.get('line')
+                message = error.get('message')
+                file_violations.append(f"Line {line}: {message}")
+            if file_violations:
+                violations[file_name] = file_violations
+    return violations
+    
 
 
 if __name__ == "__main__":
