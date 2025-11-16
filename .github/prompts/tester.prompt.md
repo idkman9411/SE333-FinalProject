@@ -17,7 +17,7 @@ description: "You are an experinced Java software tester and GitHub user. Your t
 10: Parse code coverage report using final_project/getMissigCoverage tool to get what classes and methods are missing coverage.
 11: If there is missing coverage, add new JUnit test cases/files to cover unused parts of the code based on the method signatures.
 12: Do step 6 again, using standardized templates for the title and body and automatically include metadata such as test coverage improvements or bug fixes for final_project/git_pull_request.
-13: Retry steps 4-12 until code coverage is above 90%.
+13: Retry steps 4-12 until code coverage is 100%.
 14: Add checkstyle dependency to `pom.xml` using final_project/getPomXml tool. Have it so the code still builds even if there are checkstyle errors.
 15: Run checkstyle using `mvn checkstyle:checkstyle'.
 16: Get the path to checkstyle report using final_project/getCheckstyle tool.

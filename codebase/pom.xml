@@ -118,6 +118,10 @@
             </configuration>
           </execution>
         </executions>
+        <configuration>
+          <!-- Open java.base packages to the test classloader to allow legacy reflection-based tests to run under modern JDKs -->
+          <argLine>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED ${argLine}</argLine>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
@@ -153,6 +157,15 @@
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>0.8.14</version>
+        <configuration>
+          <!-- Exclude JDK/internal packages from instrumentation to avoid classfile version/instrumentation errors -->
+          <excludes>
+            <exclude>java/**</exclude>
+            <exclude>jdk/**</exclude>
+            <exclude>sun/**</exclude>
+            <exclude>com/sun/**</exclude>
+          </excludes>
+        </configuration>
         <executions>
           <execution>
             <id>prepare-agent</id>
