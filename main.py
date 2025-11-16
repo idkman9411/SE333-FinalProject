@@ -143,6 +143,35 @@ def git_pull_request(title:str,body:str,base="main") -> str:
     return url
 
 
+#phase 5
+@mcp.tool
+def getCheckstyle()-> str:
+    """Cets the path to Checkstyle report """
+    currDir = os.getcwd()
+    path = os.path.join(currDir,"codebase","target","checkstyle-result.xml")
+    if os.path.isfile(path):
+        return path
+
+@mcp.tool    
+def parseCheckstyle(report: str) -> dict[str, list[str]]:
+    """Parses the Checkstyle report and returns the files and their style violations"""
+    violations = {}
+    with open(report, 'r') as file:
+        tree = ET.parse(file)
+        root = tree.getroot()
+        for elem in root.findall('file'):
+            file_name = elem.get('name')
+            file_violations = []
+            for error in elem.findall('error'):
+                line = error.get('line')
+                message = error.get('message')
+                file_violations.append(f"Line {line}: {message}")
+            if file_violations:
+                violations[file_name] = file_violations
+    return violations
+    
+
+
 if __name__ == "__main__":
     #print("Registered tools:", mcp.tool.keys())
     print("Starting MCP...")
