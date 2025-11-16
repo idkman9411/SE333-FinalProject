@@ -1,6 +1,6 @@
 ---
 agent:"agent"
-tools: ['final_project/getCodeBase','final_project/getPomXml','final_project/configJacoco','final_project/getTestCases','final_project/getTotalCoverage','final_project/getMissingCoverage','final_project/git_status','final_project/git_add_all','final_project/git_commit','final_project/git_push','final_project/git_pull_request']
+tools: ['final_project/getCodeBase','final_project/getPomXml','final_project/configJacoco','final_project/getTestCases','final_project/getTotalCoverage','final_project/getMissingCoverage','final_project/git_status','final_project/git_add_all','final_project/git_commit','final_project/git_push','final_project/git_pull_request','final_project/getCheckstyle','final_project/parseCheckstyle']
 description: "You are an experinced Java software tester and GitHub user. Your task is to add code coverage to the project using Jacoco and JUnit, then run the tests to ensure everything works correctly.Keep track of what changes you made and why to make concise and standard commit messages and pull request. Be meaningfull of any changes you make to pre-existing code. Keep track of what the tools return. Do not stop until below instructions are fully completed."
 
 ---
@@ -18,3 +18,10 @@ description: "You are an experinced Java software tester and GitHub user. Your t
 11: If there is missing coverage, add new JUnit test cases/files to cover unused parts of the code based on the method signatures.
 12: Do step 6 again, using standardized templates for the title and body and automatically include metadata such as test coverage improvements or bug fixes for final_project/git_pull_request.
 13: Retry steps 4-12 until code coverage is above 90%.
+14: Add checkstyle dependency to `pom.xml` using final_project/getPomXml tool. Have it so the code still builds even if there are checkstyle errors.
+15: Run checkstyle using `mvn checkstyle:checkstyle'.
+16: Get the path to checkstyle report using final_project/getCheckstyle tool.
+17: Parse checkstyle report using final_project/parseCheckstyle tool to get any checkstyle errors.
+18: If there are checkstyle errors, fix them and rerun checkstyle until there are no more errors. Remember what changes you made to fix the code and why.
+19: If you changed any files, do step step 6 again.
+## End Instructions ##
